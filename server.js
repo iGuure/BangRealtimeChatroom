@@ -4,6 +4,8 @@ var express = require('express'),	// 引入express模块
     io = require('socket.io').listen(server),	// 引入socket.io模块并绑定到服务器
     users = [];	// 保存所有在线用户的昵称
 
+var port = process.env.PORT || 5000;
+
 app.use('/', express.static(__dirname + '/www'));	// 指定静态HTML文件的位置
 server.listen(8080);
 
