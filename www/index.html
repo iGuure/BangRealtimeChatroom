@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="lib/bootstrap.min.css" rel="stylesheet">
+	<title>Bang!</title>
+</head>
+<body style="padding-top: 87px; padding-bottom: 100px;">
+
+  <nav class="navbar navbar-fixed-top" style="background-color: #fff;">
+    <div class="container">
+      <div class="navbar-header" style="padding: 0 25px;">
+        <h3>野蛮生长 不忘初心 :)</h3>
+      	<p>你的名字：<span id="currentUser" style="padding-right: 40px;"></span>在线人数：<span id="status"></span></p>
+      	<p></p>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container" id="historyMsg" style="padding: 20px 25px; overflow: auto;">
+  </div>
+
+	<div class="navbar-fixed-bottom">
+	  <div>
+	  	<textarea class="form-control" rows="3" id="textArea" placeholder="说点什么..."></textarea>
+	  </div>
+
+	  <div>
+	  	<button type="button" class="btn btn-primary btn-block" id="sendBtn">Send</button>
+	  </div>
+  </div>
+
+	<div class="modal fade" id="myModal" data-backdrop="static">
+	  <div class="modal-dialog">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <h4 class="modal-title" id='nickNameTitle'>你的名字</h4>
+	      </div>
+	      <div class="modal-body">
+	        <input type="text" class="form-control" id="nickNameInput" placeholder="比利.伊藤.诚.冠希.海灵顿">
+	      </div>
+	      <div class="modal-footer">
+	        <button type="button" class="btn btn-primary" id="enterBtn" disabled="disabled">Enter</button>
+	      </div>
+	    </div><!-- /.modal-content -->
+	  </div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
+
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="lib/jquery.min.js"></script>
+	<script src="lib/tether.min.js"></script>
+	<script src="lib/bootstrap.min.js"></script>
+	<script>
+
+		// 定义我们的HiChat类
+		var HiChat = function() {
+			this.socket = null;
+		}
+
+		// 向原型添加业务方法
+		HiChat.prototype = {
+			init: function() {	// 此方法初始化程序
+				var that = this;
+				// 建立到服务器的socket连接
+				this.socket = io.connect();
+				// 监听socket的connect事件，此事件表示连接已经建立
+				this.socket.on('connect', function() {
+					// 连接到服务器后，显示昵称输入框
+					$('#enterBtn').removeAttr('disabled');
+				});
+
+				$('#enterBtn').click(function() {
+					var nickName = $('#nickNameInput').val();
+					if (nickName.trim().length != 0)
+						that.socket.emit('login', nickName);
+					else
+						$('#nickNameInput').focus();
+				});
+
+				this.socket.on('nickExisted', function() {
+					$('#nickNameTitle').text('这个名字已经被基佬占用！');
+					$('#nickNameInput').focus();
+				});
+
+				this.socket.on('loginSuccess', function() {
+					$('#currentUser').text($('#nickNameInput').val());
+					$('#myModal').modal('hide');
+					$('#textArea').focus();
+				});
+
+				this.socket.on('system', function(nickName, userCount, type) {
+					var msg = nickName + (type == 'login' ? '已加入' : '已离开') + '聊天室';
+
+			   	// 指定系统消息显示为红色
+			    that._displayNewMsg('系统', msg, 'red');
+
+					// 将在线人数显示到页面顶部
+					$('#status').text(userCount);
+				});
+
+				$('#sendBtn').click(function() {
+					var msgInput = $('#textArea'),
+							msg = msgInput.val();
+					msgInput.val('');
+					msgInput.focus();
+					if (msg.trim().length != 0) {
+						that.socket.emit('postMsg', msg);	// 把消息发送到服务器
+						that._displayNewMsg('Me', msg, 'green');		// 把自己的消息显示到自己的窗口中
+					}
+				});
+
+				this.socket.on('newMsg', function(user, msg) {
+				  that._displayNewMsg(user, msg);
+				});
+
+				document.getElementById('nickNameInput').addEventListener('keyup', function(e) {
+		      if (e.keyCode == 13) {
+	          var nickName = document.getElementById('nickNameInput').value;
+	          if (nickName.trim().length != 0) {
+	            that.socket.emit('login', nickName);
+	          };
+		      };
+				}, false);
+
+				document.getElementById('textArea').addEventListener('keyup', function(e) {
+		      var msgInput = document.getElementById('textArea'),
+		        msg = msgInput.value;
+		      if (e.keyCode == 13 && msg.trim().length != 0) {
+	          msgInput.value = '';
+	          that.socket.emit('postMsg', msg);
+	          that._displayNewMsg('Me', msg, 'green');
+		      };
+				}, false);
+			},
+
+			_displayNewMsg: function(user, msg, color) {
+				var container = document.getElementById('historyMsg'),
+						msgToDisplay = document.createElement('p'),
+						date = new Date().toTimeString().substr(0, 8);
+				msgToDisplay.style.color = color || '#000';
+        msgToDisplay.innerHTML = user + '<span class="timespan">(' + date + ')：</span>' + msg;
+        container.appendChild(msgToDisplay);
+        container.scrollTop = container.scrollHeight;
+			}
+		}
+
+		$(document).ready(function() {
+			$('#myModal').modal('show');
+			// 实例并初始化我们的HiChat程序
+	    var hichat = new HiChat();
+	    hichat.init();
+		});
+
+	</script>
+</body>
+</html>
