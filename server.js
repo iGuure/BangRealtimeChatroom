@@ -8,7 +8,7 @@ app.use('/', express.static(__dirname + '/www'));	// 指定静态HTML文件的�
 server.listen(process.env.PORT || 3000);
 
 // socket部分
-io.on('connect', function(socket) {
+io.on('connection', function(socket) {
 	// 昵称设置
 	socket.on('login', function(nickname) {
 		if (users.indexOf(nickname) > -1)
