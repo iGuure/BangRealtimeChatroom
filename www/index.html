@@ -71,7 +71,6 @@
 				});
 
 				$('#enterBtn').click(function() {
-					alert('sss');
 					var nickName = $('#nickNameInput').val();
 					if (nickName.trim().length != 0)
 						that.socket.emit('login', nickName);
