@@ -5,7 +5,7 @@ var express = require('express'),	// 引入express模块
     users = [];	// 保存所有在线用户的昵称
 
 app.use('/', express.static(__dirname + '/www'));	// 指定静态HTML文件的位置
-server.listen(8080);
+server.listen(process.env.PORT || 3000);
 
 // socket部分
 io.on('connect', function(socket) {
