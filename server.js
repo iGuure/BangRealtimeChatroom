@@ -1,5 +1,3 @@
-var port = process.env.PORT || 5000;
-
 var express = require('express'),	// 引入express模块
     app = express(),
     server = require('http').createServer(app),
